@@ -1,0 +1,8 @@
+{
+  "engine": "cocos-creator-js",
+  "packages": "packages",
+  "name": "Cafe Server Host",
+  "id": "0c644d6a-2c3d-40a4-9562-88b7a1bdb6cb",
+  "version": "2.4.9",
+  "isNew": false
+}
