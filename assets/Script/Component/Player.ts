@@ -17,6 +17,10 @@ export default class Player extends cc.Component {
 
     playerTotalDistance: number = 0;
 
+    //TODO will send spawn side, what player has to say when he enters the screen,
+    //TODO correct response from player and leaving side. This will be manager here
+    //TODO if any data is not found then that behaviour is not be performed
+
     protected onEnable(): void {
         this.registerEvent();
     }

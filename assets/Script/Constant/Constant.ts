@@ -12,5 +12,9 @@ export enum PlayerSprite {
     GoodBye = 5,
     Question = 6,
     Angry = 7,
+}
 
+export enum CharacterType {
+    "C1" = 0,
+    "C2" = 1,
 }

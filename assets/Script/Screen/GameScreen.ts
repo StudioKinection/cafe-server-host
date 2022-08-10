@@ -1,8 +1,16 @@
 
-import Player from "../Character/Player";
+import Player from "../Component/Player";
 import { EventType, PlayerSprite } from "../Constant/Constant";
+import { GameData, IRoundData } from "../Constant/GameData";
 import { Event } from "../Utils/EventEmitter";
 import AbstractScreen from "../Utils/Screens/AbstractScreen";
+
+const playerPosition = {
+    InItPosition: -740,
+    LeftOfScreen: -270,
+    RightOfScreen: 270,
+    EndPosition: 740
+}
 
 const { ccclass, property } = cc._decorator;
 
@@ -10,7 +18,7 @@ const { ccclass, property } = cc._decorator;
 export default class GameScreen extends AbstractScreen {
 
     @property(cc.Prefab)
-    playerPrefab: cc.Prefab = null;
+    playerPrefab: cc.Prefab[] = null; //this has to be an array so that we can spawn any of the 6 character
     @property(cc.Node)
     private playerHolderNode: cc.Node = null;
     @property(cc.Node)
@@ -21,39 +29,37 @@ export default class GameScreen extends AbstractScreen {
     private bottomButtons: cc.Button[] = [];
 
     private isMouseDown: boolean = false;
-    private _player: Player = null;
     private playerWidth: number = 600;
     private playerHeight: number = 600;
-    private playerInitialPositionDelay: number = 1;
-    private playerInitialActionDelay: number = 2.5
     private initialBubblePosition = new cc.Vec2(0, 0);
     private currenttargetBubbleNode: cc.Node = null;
     private lastTargetBubbleNode: cc.Node = null;
     private initialBubblePositionLastnode = new cc.Vec2(0, 0);
     private screenVisibleWidth: number;
 
-    playerPosition = {
-        InItPosition: -740,
-        LeftOfScreen: -270,
-        RightOfScreen: 270,
-        EndPosition: 740
-    }
+    private currentRoundIndex: number = 0;
+    private allPlayersInGameRef: Map<string, Player> = null
 
+
+
+    protected onLoad(): void {
+        this.screenSizeAndPlayerPosition();
+    }
 
     onShow() {
-        this.inIt();
+        this.reset();
         this.registerEvent();
     }
-    onHide(index: any) {
+
+    onHide() {
         this.unRegisterEvent();
     }
-    private inIt() {
+
+    private reset() {
+        if (typeof this.allPlayersInGameRef == typeof {}) this.allPlayersInGameRef.clear();
+        else this.allPlayersInGameRef = new Map<string, Player>()
+        this.currentRoundIndex = 0;
         this.playerHolderNode.removeAllChildren();
-        this.screenSizeAndPlayerPosition();
-        const player = this.makePlayerPrefab();
-        this._player = player.getComponent(Player);
-        this.scheduleOnce(this.playerInLeftOfScreen, this.playerInitialPositionDelay);
-        this.scheduleOnce(this.playerInitialAction, this.playerInitialActionDelay);
     }
 
     private registerEvent() {
@@ -63,7 +69,6 @@ export default class GameScreen extends AbstractScreen {
             buttonNode.on(cc.Node.EventType.TOUCH_END, this.bubbleNodeEndEvent, this)
             buttonNode.on(cc.Node.EventType.TOUCH_CANCEL, this.bubbleNodeEndEvent, this)
         }
-
     }
     private unRegisterEvent() {
         for (const buttonNode of this.bubbleButtonsNode) {
@@ -71,8 +76,26 @@ export default class GameScreen extends AbstractScreen {
             buttonNode.off(cc.Node.EventType.TOUCH_MOVE, this.bubbleNodeMoveEvent, this)
             buttonNode.off(cc.Node.EventType.TOUCH_END, this.bubbleNodeEndEvent, this)
             buttonNode.off(cc.Node.EventType.TOUCH_CANCEL, this.bubbleNodeEndEvent, this)
-
         }
+    }
+
+    private startNextRound() {
+        const currentRoundData: IRoundData = this.getCurrentRoundData()
+        //TODO make a new player depending on data or Use the exsisting one in scene
+        const playerNode: cc.Node = cc.instantiate(this.playerPrefab[currentRoundData.chracter])
+        const playerComp = playerNode.getComponent(Player)
+        this.allPlayersInGameRef.set(currentRoundData.chracter, playerComp)
+        this.setGameUI(currentRoundData)
+        //TODO now only on correct response the game will move forward otherwise the current player
+        //TODO will keep showing iDontUnderstand pose
+    }
+
+    private getCurrentRoundData() {
+        return GameData[this.currentRoundIndex];
+    }
+
+    private setGameUI(currentRoundData: IRoundData) {
+
     }
 
     private playerInitialAction() {
@@ -83,16 +106,16 @@ export default class GameScreen extends AbstractScreen {
     private screenSizeAndPlayerPosition() {
         const screenSize = cc.view.getVisibleSize();
         this.screenVisibleWidth = screenSize.width;
-        this.playerPosition.InItPosition = -((this.screenVisibleWidth / 2) + (this.playerWidth / 2));
-        this.playerPosition.LeftOfScreen = ((this.screenVisibleWidth / 2));
-        this.playerPosition.RightOfScreen = ((this.screenVisibleWidth / 2) + ((this.playerWidth * 3) / 4));
-        this.playerPosition.EndPosition = ((this.screenVisibleWidth) + ((this.playerWidth * 3) / 4));
+        playerPosition.InItPosition = -((this.screenVisibleWidth / 2) + (this.playerWidth / 2));
+        playerPosition.LeftOfScreen = ((this.screenVisibleWidth / 2));
+        playerPosition.RightOfScreen = ((this.screenVisibleWidth / 2) + ((this.playerWidth * 3) / 4));
+        playerPosition.EndPosition = ((this.screenVisibleWidth) + ((this.playerWidth * 3) / 4));
     }
 
     private makePlayerPrefab() {
-        const playerNode = cc.instantiate(this.playerPrefab)
+        const playerNode = cc.instantiate(this.playerPrefab[0])
         this.playerHolderNode.addChild(playerNode);
-        playerNode.x = this.playerPosition.InItPosition;
+        playerNode.x = playerPosition.InItPosition;
         playerNode.y = this.playerHeight / 2;
         console.log("Player Instantiate")
         return playerNode;
@@ -152,7 +175,11 @@ export default class GameScreen extends AbstractScreen {
         }
     }
     private buttonDropInBubbleHolder() {
+        //TODO event emit button string to player
 
+        //TODO if the data mactes to promt then start next round otherwise return
+        this.currentRoundIndex++;
+        this.startNextRound()
     }
 
     private bottomButtonInteractibility() {
@@ -160,20 +187,27 @@ export default class GameScreen extends AbstractScreen {
             this.bottomButtons[i].interactable = true;
         }
     }
+
+    private makeATestingPlayer() {
+        const player = this.makePlayerPrefab();
+        this.scheduleOnce(this.playerInLeftOfScreen, 1.2);
+        this.scheduleOnce(this.playerInitialAction, 2);
+    }
+
     private playerInLeftOfScreen() {
 
-        Event.emit(EventType.PlayerPosition, this.playerPosition.LeftOfScreen);
+        Event.emit(EventType.PlayerPosition, playerPosition.LeftOfScreen);
 
     }
 
     private playerInRightOfScreen() {
-        Event.emit(EventType.PlayerPosition, this.playerPosition.RightOfScreen);
+        Event.emit(EventType.PlayerPosition, playerPosition.RightOfScreen);
 
     }
 
     private playerOutOfScreen() {
         var isDead = true;
-        Event.emit(EventType.PlayerPosition, this.playerPosition.EndPosition, isDead);
+        Event.emit(EventType.PlayerPosition, playerPosition.EndPosition, isDead);
 
     }
 
