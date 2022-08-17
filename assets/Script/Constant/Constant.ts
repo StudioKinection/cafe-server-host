@@ -1,6 +1,7 @@
 export enum EventType {
     PlayerPosition = "PlayerPosition",
-    PlayerSprite = "PlayerSprite"
+    PlayerSprite = "PlayerSprite",
+    NewRoundOnExit = "NewRoundOnExit"
 }
 
 export enum PlayerSprite {
@@ -13,7 +14,10 @@ export enum PlayerSprite {
     Question = 6,
     Angry = 7,
 }
-
+export enum GameFlow {
+    Player = "Player",
+    GameOver = "GameOver",
+}
 export enum CharacterType {
     "C1" = 0,
     "C2" = 1,

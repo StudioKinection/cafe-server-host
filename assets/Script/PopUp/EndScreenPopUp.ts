@@ -8,7 +8,7 @@ const { ccclass, property } = cc._decorator;
 export default class EndScreenPopUp extends PopUpBase {
 
     onPlayAgainClick() {
-        cc.director.resume();
+        window.PopUpManager.hideAllPopUps();
         cc.director.loadScene("Game");
     }
 }
